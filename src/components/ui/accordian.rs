@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::atomic::AtomicUsize};
+use std::{collections::{BTreeMap, HashSet}, rc::Rc, sync::atomic::AtomicUsize};
 
 use dioxus::prelude::*;
 
@@ -24,11 +24,14 @@ impl<A: AsRef<str>> From<A> for AccordianType {
 }
 
 /// Handles the contextual state of an accordian
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct AccordianState {
     pub collapsible: bool,
     pub typ: AccordianType,
     pub orientation: Orientation,
+
+    items: Vec<Rc<MountedData>>,
+    item_map: BTreeMap<String, usize>,
 
     current: HashSet<String>,
     onchange: Option<EventHandler<HashSet<String>>>,
@@ -52,6 +55,8 @@ impl AccordianState {
         Self {
             orientation: orientation.unwrap_or(Orientation::Vertical),
             collapsible: collapsible.unwrap_or_default(),
+            items: Default::default(),
+            item_map: Default::default(),
             typ,
             current,
             onchange,
@@ -82,6 +87,70 @@ impl AccordianState {
     pub fn contains(&self, value: impl AsRef<str>) -> bool {
         self.current.contains(value.as_ref())
     }
+
+    fn add_item(&mut self, key: impl AsRef<str>, data: Rc<MountedData>) {
+        let key = key.as_ref();
+        if !self.item_map.contains_key(key) {
+            self.item_map.insert(key.to_string(), self.items.len());
+            self.items.push(data);
+        }
+    }
+
+    async fn handle_key(&self, key: impl AsRef<str>, evt: Event<KeyboardData>) {
+        let key = key.as_ref();
+
+        match evt.key() {
+            Key::ArrowUp => if self.orientation.is_vertical() {
+                evt.prevent_default();
+                if let Some(index) = self.item_map.get(key) {
+                    if *index > 0 {
+                        self.items[index-1].set_focus(true).await;
+                    }
+                }
+            },
+            Key::ArrowDown => if self.orientation.is_vertical() {
+                evt.prevent_default();
+                if let Some(index) = self.item_map.get(key) {
+                    if *index < self.items.len() - 1 {
+                        self.items[index+1].set_focus(true).await;
+                    }
+                }
+            },
+            Key::ArrowRight => if self.orientation.is_horizontal() {
+                evt.prevent_default();
+                if let Some(index) = self.item_map.get(key) {
+                    if *index < self.items.len() - 1 {
+                        self.items[index+1].set_focus(true).await;
+                    }
+                }
+            },
+            Key::ArrowLeft => if self.orientation.is_horizontal() {
+                evt.prevent_default();
+                if let Some(index) = self.item_map.get(key) {
+                    if *index > 0 {
+                        self.items[index-1].set_focus(true).await;
+                    }
+                }
+            },
+            Key::Home => {
+                evt.prevent_default();
+                if let Some(index) = self.item_map.get(key) {
+                    if *index != 0 {
+                        self.items[0].set_focus(true).await;
+                    }
+                }
+            },
+            Key::End => {
+                evt.prevent_default();
+                if let Some(index) = self.item_map.get(key) {
+                    if *index != self.items.len() - 1 {
+                        self.items[self.items.len() - 1].set_focus(true).await;
+                    }
+                }
+            },
+            _ => {}
+        }
+    }
 }
 
 /// Accordian
@@ -92,13 +161,6 @@ impl AccordianState {
 /// 
 /// - `[data-state]`: `"open"` | `"closed"`
 /// - `[data-orientation]`: `"vertical"` | `"horizontal"`
-/// 
-/// # Accessibility
-/// 
-/// **Keyboard Interaction**
-/// 
-/// - `<Tab>`: Change focus between the accordian item headers/triggers.
-/// - `<Shift + Tab>`: Change focus between the accordian item headers/triggers.
 #[component]
 pub fn Accordian(
     /// Default item(s) to open
@@ -180,7 +242,7 @@ pub fn AccordianItem(
     let id = ACCORDIAN_ID.load(std::sync::atomic::Ordering::Acquire).saturating_add(1);
 
     ACCORDIAN_ID.store(id, std::sync::atomic::Ordering::Release);
-    use_context_provider(|| AccordianItemState::new(value.clone(), id, disabled.unwrap_or_default()));
+    use_context_provider(|| Signal::new(AccordianItemState::new(value.clone(), id, disabled.unwrap_or_default())));
 
     rsx! {
         div {
@@ -233,6 +295,12 @@ pub fn AccordianHeader(
 /// 
 /// - `<Space>`: Opens/Closes the item.
 /// - `<Enter>`: Opens/Closes the item.
+/// - `<ArrowDown>`: [Vertical] Focus next item. If the last item is currently focused, this will do nothing.
+/// - `<ArrowUp>`: [Vertical] Focus previous item. If the first item is currently focused, this will do nothing.
+/// - `<ArrowRight>`: [Horizontal] Focus next item. If the last item is currently focused, this will do nothing.
+/// - `<ArrowLeft>`: [Horizontal] Focus previous item. If the first item is currently focused, this will do nothing.
+/// - `<Home>`: Focus the first item. If the last item is currently focused, this will do nothing.
+/// - `<End>`: Focus the last item. If the first item is currently focused, this will do nothing.
 #[component]
 pub fn AccordianTrigger(
     children: Element,
@@ -240,21 +308,24 @@ pub fn AccordianTrigger(
     attrs: Vec<Attribute>
 ) -> Element {
     let mut state = use_context::<Signal<AccordianState>>();
-    let id = use_context::<AccordianItemState>();
+    let id = use_context::<Signal<AccordianItemState>>();
 
     rsx! {
         button {
             r#type: "button",
-            id: id.trigger_id(),
-            aria_controls: id.content_id(),
-            aria_expanded: state.read().contains(id.value()),
-            aria_disabled: state.read().contains(id.value()) && !state.read().collapsible,
-            disabled: state.read().contains(id.value()) && !state.read().collapsible,
+            id: id.read().trigger_id(),
+            aria_controls: id.read().content_id(),
+            aria_expanded: state.read().contains(id.read().value()),
+            aria_disabled: state.read().contains(id.read().value()) && !state.read().collapsible,
+            disabled: state.read().contains(id.read().value()) && !state.read().collapsible,
 
-            "data-state": if state.read().contains(id.value()) { "open" } else { "closed" },
+            "data-state": if state.read().contains(id.read().value()) { "open" } else { "closed" },
             "data-orientation": state.read().orientation,
 
-            onclick: move |_| state.write().toggle(id.value()),
+            onclick: move |_: Event<MouseData>| state.write().toggle(id.read().value()),
+            onkeydown: move |evt| async move { state.read().handle_key(id.read().value(), evt).await },
+
+            onmounted: move |v: Event<MountedData>| state.write().add_item(id.read().value(), v.data()),
 
             ..attrs,
 
@@ -275,17 +346,17 @@ pub fn AccordianContent(
     children: Element
 ) -> Element {
     let state = use_context::<Signal<AccordianState>>();
-    let id = use_context::<AccordianItemState>();
+    let id = use_context::<Signal<AccordianItemState>>();
 
     rsx! {
         div {
-            id: id.content_id(),
+            id: id.read().content_id(),
             role: if state.read().typ.is_multiple() { None } else { Some("region") },
-            aria_labelledby: id.trigger_id(),
+            aria_labelledby: id.read().trigger_id(),
 
-            hidden: !state.read().contains(id.value()),
+            hidden: !state.read().contains(id.read().value()),
 
-            "data-state": if state.read().contains(id.value()) { "open" } else { "closed" },
+            "data-state": if state.read().contains(id.read().value()) { "open" } else { "closed" },
             "data-orientation": state.read().orientation,
 
             {children}

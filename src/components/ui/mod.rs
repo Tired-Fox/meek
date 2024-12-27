@@ -5,7 +5,7 @@ use dioxus::prelude::IntoAttributeValue;
 pub use toggle::*;
 pub use accordian::*;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, strum::EnumIs)]
 pub enum Orientation {
     Vertical,
     Horizontal
