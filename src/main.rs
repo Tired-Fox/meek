@@ -28,7 +28,7 @@ fn App() -> Element {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: GLOBAL_CSS }
-        // document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         Router::<Route> {}
     }

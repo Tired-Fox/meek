@@ -9,7 +9,9 @@ edition = "2021"
 [dependencies]
 dioxus = { version = "0.6.1", features = ["router", "fullstack"] }
 lucide-dioxus = "1.1.0"
+short-uuid = "0.1.4"
 strum = { version = "0.26.3", features = ["derive"] }
+uuid = { version = "1.11.0", features = ["v4"] }
 
 [features]
 default = []

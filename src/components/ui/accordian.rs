@@ -1,10 +1,8 @@
-use std::{collections::{BTreeMap, HashSet}, rc::Rc, sync::atomic::AtomicUsize};
+use std::{collections::{BTreeMap, HashSet}, rc::Rc, sync::atomic::{AtomicUsize, Ordering}};
 
 use dioxus::prelude::*;
 
 use super::Orientation;
-
-const ACCORDIAN_ID: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, strum::EnumIs)]
 pub enum AccordianType {
@@ -192,27 +190,37 @@ pub fn Accordian(
 #[derive(Debug, Clone, PartialEq)]
 pub struct AccordianItemState {
     value: String,
-    id: usize,
+    id: String,
+    trigger_id: Option<String>,
+    content_id: Option<String>,
     pub disabled: bool,
 }
 
 impl AccordianItemState {
-    fn new(value: impl std::fmt::Display, id: usize, disabled: bool) -> Self {
+    fn new(value: impl std::fmt::Display, id: Option<String>, disabled: bool) -> Self {
         Self {
             value: value.to_string(),
-            id,
+            id: id.unwrap_or(short_uuid::ShortUuid::from_uuid(&uuid::Uuid::new_v4()).to_string()),
+            trigger_id: None,
+            content_id: None,
             disabled
         }
     }
 
     /// Get the formatted trigger id
     fn trigger_id(&self) -> String {
-        format!("meek-accordian-:t{}:", self.id)
+        self.trigger_id.clone()
+            .unwrap_or(format!("meek-accordian-trigger-{}", self.id))
     }
 
     /// Get the formatted content id
     fn content_id(&self) -> String {
-        format!("meek-accordian-:i{}:", self.id)
+        self.content_id.clone()
+            .unwrap_or(format!("meek-accordian-content-{}", self.id))
+    }
+
+    fn id(&self) -> String {
+        format!("meek-accordian-:{}:", self.id)
     }
 
     /// Get the items value
@@ -233,19 +241,21 @@ pub fn AccordianItem(
     #[props(into)]
     value: String,
     disabled: Option<bool>,
+    #[props(into)]
+    id: Option<String>,
     children: Element,
 
     #[props(extends = GlobalAttributes)]
     attrs: Vec<Attribute>
 ) -> Element {
     let state = use_context::<Signal<AccordianState>>();
-    let id = ACCORDIAN_ID.load(std::sync::atomic::Ordering::Acquire).saturating_add(1);
 
-    ACCORDIAN_ID.store(id, std::sync::atomic::Ordering::Release);
     use_context_provider(|| Signal::new(AccordianItemState::new(value.clone(), id, disabled.unwrap_or_default())));
+    let id = use_context::<Signal<AccordianItemState>>();
 
     rsx! {
         div {
+            id: id.read().id(),
             "data-state": if state.read().contains(&value) { "open" } else { "closed" },
             "data-disabled": state.read().contains(&value) && !state.read().collapsible,
             "data-orientation": state.read().orientation,
@@ -303,29 +313,37 @@ pub fn AccordianHeader(
 /// - `<End>`: Focus the last item. If the first item is currently focused, this will do nothing.
 #[component]
 pub fn AccordianTrigger(
+    #[props(into)]
+    id: Option<String>,
     children: Element,
     #[props(extends = GlobalAttributes)]
     attrs: Vec<Attribute>
 ) -> Element {
     let mut state = use_context::<Signal<AccordianState>>();
-    let id = use_context::<Signal<AccordianItemState>>();
+    let mut iid = use_context::<Signal<AccordianItemState>>();
+
+    use_effect(move || {
+        if let Some(id) = &id {
+            iid.write().trigger_id = Some(id.to_string());
+        }
+    });
 
     rsx! {
         button {
             r#type: "button",
-            id: id.read().trigger_id(),
-            aria_controls: id.read().content_id(),
-            aria_expanded: state.read().contains(id.read().value()),
-            aria_disabled: state.read().contains(id.read().value()) && !state.read().collapsible,
-            disabled: state.read().contains(id.read().value()) && !state.read().collapsible,
+            id: iid.read().trigger_id(),
+            aria_controls: iid.read().content_id(),
+            aria_expanded: state.read().contains(iid.read().value()),
+            aria_disabled: state.read().contains(iid.read().value()) && !state.read().collapsible,
+            disabled: state.read().contains(iid.read().value()) && !state.read().collapsible,
 
-            "data-state": if state.read().contains(id.read().value()) { "open" } else { "closed" },
+            "data-state": if state.read().contains(iid.read().value()) { "open" } else { "closed" },
             "data-orientation": state.read().orientation,
 
-            onclick: move |_: Event<MouseData>| state.write().toggle(id.read().value()),
-            onkeydown: move |evt| async move { state.read().handle_key(id.read().value(), evt).await },
+            onclick: move |_: Event<MouseData>| state.write().toggle(iid.read().value()),
+            onkeydown: move |evt| async move { state.read().handle_key(iid.read().value(), evt).await },
 
-            onmounted: move |v: Event<MountedData>| state.write().add_item(id.read().value(), v.data()),
+            onmounted: move |v: Event<MountedData>| state.write().add_item(iid.read().value(), v.data()),
 
             ..attrs,
 
@@ -343,21 +361,32 @@ pub fn AccordianTrigger(
 /// - `[data-disabled]`: Present when disabled
 #[component]
 pub fn AccordianContent(
-    children: Element
+    #[props(into)]
+    id: Option<String>,
+    children: Element,
+
+    #[props(extends = GlobalAttributes)]
+    attrs: Vec<Attribute>
 ) -> Element {
     let state = use_context::<Signal<AccordianState>>();
-    let id = use_context::<Signal<AccordianItemState>>();
+    let mut iid = use_context::<Signal<AccordianItemState>>();
+
+    if let Some(id) = id {
+        iid.write().content_id = Some(id);
+    }
 
     rsx! {
         div {
-            id: id.read().content_id(),
+            id: iid.read().content_id(),
             role: if state.read().typ.is_multiple() { None } else { Some("region") },
-            aria_labelledby: id.read().trigger_id(),
+            aria_labelledby: iid.read().trigger_id(),
 
-            hidden: !state.read().contains(id.read().value()),
+            hidden: !state.read().contains(iid.read().value()),
 
-            "data-state": if state.read().contains(id.read().value()) { "open" } else { "closed" },
+            "data-state": if state.read().contains(iid.read().value()) { "open" } else { "closed" },
             "data-orientation": state.read().orientation,
+
+            ..attrs,
 
             {children}
         }
