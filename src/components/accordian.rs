@@ -1,4 +1,4 @@
-use std::{collections::{BTreeMap, HashSet}, rc::Rc, sync::atomic::{AtomicUsize, Ordering}};
+use std::{collections::{BTreeMap, HashSet}, rc::Rc};
 
 use dioxus::prelude::*;
 
@@ -23,7 +23,7 @@ impl<A: AsRef<str>> From<A> for AccordianType {
 
 /// Handles the contextual state of an accordian
 #[derive(Debug)]
-pub struct AccordianState {
+struct AccordianState {
     pub collapsible: bool,
     pub typ: AccordianType,
     pub orientation: Orientation,
@@ -96,6 +96,8 @@ impl AccordianState {
 
     async fn handle_key(&self, key: impl AsRef<str>, evt: Event<KeyboardData>) {
         let key = key.as_ref();
+
+        // TODO: Handle set_focus result response
 
         match evt.key() {
             Key::ArrowUp => if self.orientation.is_vertical() {
@@ -371,9 +373,11 @@ pub fn AccordianContent(
     let state = use_context::<Signal<AccordianState>>();
     let mut iid = use_context::<Signal<AccordianItemState>>();
 
-    if let Some(id) = id {
-        iid.write().content_id = Some(id);
-    }
+    use_effect(move || {
+        if let Some(id) = &id {
+            iid.write().content_id = Some(id.to_string());
+        }
+    });
 
     rsx! {
         div {

@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
 
+use super::MaybeSignal;
+
 /// A two-state button that can be `on` or `off`.
 /// 
 /// # Data Attributes
@@ -15,27 +17,36 @@ use dioxus::prelude::*;
 /// - `<Enter>`: Activates/Deactivates the toggle.
 #[component]
 pub fn Toggle(
-    pressed: Option<bool>,
+    #[props(into, default = MaybeSignal::new(false))]
+    pressed: MaybeSignal<bool>,
     disabled: Option<bool>,
 
-    onclick: Option<EventHandler<MouseEvent>>,
+    onchange: Option<EventHandler<bool>>,
 
     children: Option<Element>,
 
     #[props(extends = GlobalAttributes, extends = Button)]
     button_and_global_attrs: Vec<Attribute>,
 ) -> Element {
+    let mut pressed = pressed.as_signal();
+
     rsx! {
         button {
             r#type: "button",
 
             aria_pressed: pressed,
-            "data-state": if let Some(true) = pressed { "on" } else { "off" },
+            "data-state": if pressed() { "on" } else { "off" },
 
-            disabled: disabled.unwrap_or_default(),
+            disabled: disabled,
+            aria_disabled: disabled,
             "data-disabled": disabled.unwrap_or_default(),
 
-            onclick: move |evt| if let Some(onclick) = onclick { onclick.call(evt); },
+            onclick: move |_| {
+                pressed.toggle();
+                if let Some(onchange) = onchange {
+                    onchange.call(*pressed.read());
+                }
+            },
 
             ..button_and_global_attrs,
 

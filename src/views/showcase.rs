@@ -1,16 +1,20 @@
 use dioxus::prelude::*;
 use lucide_dioxus::Bold;
-use meek::ui::Toggle;
-use meek::ui::{ Accordian, AccordianItem, AccordianHeader, AccordianContent, AccordianTrigger };
+use meek::Button;
+use meek::Toggle;
+use meek::{ Accordian, AccordianItem, AccordianHeader, AccordianContent, AccordianTrigger };
+use meek::{ AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction };
 
 #[component]
 pub fn Showcase() -> Element {
-    let mut pressed = use_signal(|| false);
+    let pressed = use_signal(|| false);
 
     let accordian_items = [
         ("item-1", "Item 1"),
         ("item-2", "Item 2"),
     ];
+
+    let mut alert_open = use_signal(|| false);
 
     rsx! {
         main {
@@ -31,8 +35,7 @@ pub fn Showcase() -> Element {
                 h2 { class: "text-xl font-bold mb-2", "Accordian" }
                 Toggle {
                     class: "",
-                    pressed: pressed(),
-                    onclick: move |_| pressed.toggle(),
+                    pressed: pressed,
                     aria_label: "Toggle bold",
                     Bold { class: "w-4 h-4" }
                 }
@@ -63,6 +66,46 @@ pub fn Showcase() -> Element {
                                 id: format!("accord-{i}-content"),
                                 class: "border border-sky-700 p-2",
                                 "{item.1} Content"
+                            }
+                        }
+                    }
+                }
+            }
+            Button {
+                class: "border px-2 py-1",
+                onclick: move |_| {
+                    alert_open.toggle()
+                },
+                "Toggle Alert Open",
+            }
+            div {
+                class: "p-4",
+                h2 { class: "text-xl font-bold mb-2", "Alert Dialog" }
+                AlertDialog {
+                    open: alert_open,
+                    AlertDialogTrigger {
+                        class: "border px-2 py-1",
+                        "Open Alert Dialog: {alert_open}"
+                    }
+                    AlertDialogContent { class: "w-50 h-50 rounded-md p-4",
+                        AlertDialogTitle { class: "text-2xl font-bold",
+                            "Alert Dialog"
+                        }
+                        AlertDialogDescription {
+                            "This is an alert dialog. A modal that interrupts the user and expects a response."
+                        }
+                        div {
+                            class: "mt-2 flex gap-2 justify-end",
+                            AlertDialogCancel {
+                                class: "border px-2 py-1 rounded-md hover:bg-gray-100 focus:bg-gray-300 focus:outline-none",
+                                "Cancel"
+                            }
+                            AlertDialogAction {
+                                class: "px-2 py-1 rounded-md bg-rose-600 text-white focus:outline-none hover:opacity-85 focus:opacity-85",
+                                onclick: move |_| {
+                                    println!("Alert Dialog Action, CLICKED!");
+                                },
+                                "Action"
                             }
                         }
                     }

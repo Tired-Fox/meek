@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+use dioxus_logger::tracing::Level;
 use views::Showcase;
 
 mod components;
@@ -17,6 +18,7 @@ const GLOBAL_CSS: Asset = asset!("/assets/global.css");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 fn main() {
+    dioxus_logger::init(Level::INFO).expect("failed to init logger");
     dioxus::launch(App);
 }
 
