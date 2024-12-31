@@ -1,32 +1,49 @@
-# Development
-
-Your new jumpstart project includes basic organization with an organized `assets` folder and a `components` folder. 
-If you chose to develop with the router feature, you will also have a `views` folder.
-
-### Tailwind
-1. Install npm: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
-2. Install the Tailwind CSS CLI: https://tailwindcss.com/docs/installation
-3. Run the following command in the root of the project to start the Tailwind CSS compiler:
-
-```bash
-npx tailwindcss -i ./input.css -o ./assets/tailwind.css --watch
-```
-
-### Serving Your App
-
-Run the following command in the root of your project to start developing with the default platform:
-
-```bash
-dx serve --platform desktop
-```
-
-To run for a different platform, use the `--platform platform` flag. E.g.
-```bash
-dx serve --platform desktop
-```
-
-
-___
-
+# Meek
 
 Inspired by [`Radix Primitives`](https://www.radix-ui.com/primitives) this library aims to create a dioxus version of an accessibility component library for [`Dioxus`](https://dioxuslabs.com/). With this in place UI libraries in general can port their styling on top like [`shadcn`](https://ui.shadcn.com/), [`Skeleton`](https://www.skeleton.dev/), [`Daisy`](https://daisyui.com/), etc.
+
+
+## TODO
+
+**WAI ARIA**
+
+- [x] Button
+- [x] Toggle Button
+- [x] Accordian
+- [x] Alert Dialog
+- [ ] Breadcrumb
+- [ ] Carousel
+- [ ] Checkbox
+- [ ] Combobox
+- [ ] Dialog
+- [ ] Disclosure
+- [ ] Feed
+- [ ] listbox
+- [ ] menu
+- [ ] menu button
+- [ ] meter
+- [ ] radio group
+- [ ] slider
+- [ ] switch
+- [ ] table
+- [ ] tabs
+- [ ] toolbar
+- [ ] tooltip
+- [ ] tree view
+- [ ] tree grid
+- [ ] window splitter (resizable)
+
+**Additional Radix Primitives**
+
+- Avatar
+- Collapsible
+- Context Menu
+- Dropdown Menu
+- Label
+- Popover
+- Scroll Area
+- Select
+- Separator
+- Toast
+- Toggle Group
+- Portal

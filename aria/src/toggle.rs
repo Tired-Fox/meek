@@ -17,8 +17,7 @@ use super::MaybeSignal;
 /// - `<Enter>`: Activates/Deactivates the toggle.
 #[component]
 pub fn Toggle(
-    #[props(into, default = MaybeSignal::new(false))]
-    pressed: MaybeSignal<bool>,
+    pressed: Option<bool>,
     disabled: Option<bool>,
 
     onchange: Option<EventHandler<bool>>,
@@ -28,23 +27,29 @@ pub fn Toggle(
     #[props(extends = GlobalAttributes, extends = Button)]
     button_and_global_attrs: Vec<Attribute>,
 ) -> Element {
-    let mut pressed = pressed.as_signal();
+    let mut state = use_signal(|| pressed.unwrap_or_default());
+
+    use_effect(use_reactive!(|pressed| {
+        if let Some(pressed) = pressed {
+            state.set(pressed);
+        } 
+    }));
 
     rsx! {
         button {
             r#type: "button",
 
-            aria_pressed: pressed,
-            "data-state": if pressed() { "on" } else { "off" },
+            aria_pressed: state,
+            "data-state": if state() { "on" } else { "off" },
 
             disabled: disabled,
             aria_disabled: disabled,
             "data-disabled": disabled.unwrap_or_default(),
 
             onclick: move |_| {
-                pressed.toggle();
+                state.toggle();
                 if let Some(onchange) = onchange {
-                    onchange.call(*pressed.read());
+                    onchange.call(*state.read());
                 }
             },
 

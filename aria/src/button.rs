@@ -1,15 +1,10 @@
 use dioxus::prelude::*;
 
-#[derive(Props, Clone, PartialEq)]
-pub struct BProps {
-    pub disabled: Option<bool>,
-    #[props(extends = Button,extends = GlobalAttributes)]
-    pub attrs: Vec<Attribute>,
-    pub children: Element,
-}
-
 #[component]
 pub fn Button(
+    #[props(extends = GlobalAttributes)]
+    attrs: Vec<Attribute>,
+
     disabled: Option<bool>,
 
     onclick: Option<EventHandler<MouseEvent>>,
@@ -24,10 +19,7 @@ pub fn Button(
     onfocusin:  Option<EventHandler<FocusEvent>>,
     onfocusout: Option<EventHandler<FocusEvent>>,
 
-    #[props(extends=Button, extends=GlobalAttributes)]
-    attrs: Vec<Attribute>,
-
-    children: Element
+    children: Element,
 ) -> Element {
     rsx! {
         button {

@@ -2,6 +2,8 @@ use std::{collections::{BTreeMap, HashSet}, rc::Rc};
 
 use dioxus::prelude::*;
 
+use crate::create_id;
+
 use super::Orientation;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, strum::EnumIs)]
@@ -202,7 +204,7 @@ impl AccordianItemState {
     fn new(value: impl std::fmt::Display, id: Option<String>, disabled: bool) -> Self {
         Self {
             value: value.to_string(),
-            id: id.unwrap_or(short_uuid::ShortUuid::from_uuid(&uuid::Uuid::new_v4()).to_string()),
+            id: id.unwrap_or(create_id()),
             trigger_id: None,
             content_id: None,
             disabled

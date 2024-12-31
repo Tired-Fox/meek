@@ -1,29 +1,30 @@
 use dioxus::prelude::*;
-use lucide_dioxus::Bold;
-use meek::Button;
-use meek::Toggle;
-use meek::{ Accordian, AccordianItem, AccordianHeader, AccordianContent, AccordianTrigger };
-use meek::{ AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction };
+
+use lucide_dioxus::{Bold, Check};
+
+use meek_aria::Button;
+use meek_aria::Toggle;
+use meek_aria::Checkbox;
+use meek_aria::{ Portal, Teleport };
+use meek_aria::{ Accordian, AccordianItem, AccordianHeader, AccordianContent, AccordianTrigger };
+use meek_aria::{ AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction };
 
 #[component]
 pub fn Showcase() -> Element {
-    let pressed = use_signal(|| false);
+    let mut pressed = use_signal(|| false);
+    let mut alert_open = use_signal(|| false);
 
     let accordian_items = [
         ("item-1", "Item 1"),
         ("item-2", "Item 2"),
     ];
 
-    let mut alert_open = use_signal(|| false);
-
     rsx! {
         main {
-            style: r#"
-                width: 100vw;
-                height: 100vh;
-                background-color: black;
-                color: white;
-            "#,
+            width: "100vw",
+            height: "100vh",
+            background_color: "black",
+            color: "white",
             style {r#"
                 button[data-state="on"] {{
                     background-color: red;
@@ -35,7 +36,8 @@ pub fn Showcase() -> Element {
                 h2 { class: "text-xl font-bold mb-2", "Accordian" }
                 Toggle {
                     class: "",
-                    pressed: pressed,
+                    pressed: pressed(),
+                    onchange: move |state| pressed.set(state), 
                     aria_label: "Toggle bold",
                     Bold { class: "w-4 h-4" }
                 }
@@ -71,18 +73,12 @@ pub fn Showcase() -> Element {
                     }
                 }
             }
-            Button {
-                class: "border px-2 py-1",
-                onclick: move |_| {
-                    alert_open.toggle()
-                },
-                "Toggle Alert Open",
-            }
             div {
                 class: "p-4",
                 h2 { class: "text-xl font-bold mb-2", "Alert Dialog" }
                 AlertDialog {
-                    open: alert_open,
+                    open: alert_open(),
+                    onchange: move |state| alert_open.set(state),
                     AlertDialogTrigger {
                         class: "border px-2 py-1",
                         "Open Alert Dialog: {alert_open}"
@@ -111,6 +107,31 @@ pub fn Showcase() -> Element {
                     }
                 }
             }
+            Teleport {
+                div {
+                    class: "p-4",
+                    h2 { class: "text-xl font-bold mb-2", "Portal" }
+                    div {
+                        class: "flex gap-2",
+                        "Button Toggled? {alert_open}",
+                        Button {
+                            class: "border px-2 py-1",
+                            onclick: move |_| alert_open.toggle(),
+                            "Toggle Alert Open",
+                        }
+                    }
+                }
+            }
+            div {
+                class: "p-4",
+                h2 { class: "text-xl font-bold mb-2", "Checkbox" }
+                Checkbox {
+                    class: "group bg-white w-6 h-6 rounded flex items-center justify-center border",
+                    Check { class: "hidden group-data-[state=checked]:block w-4 h-4 text-green-500" }
+                }
+            }
+            
+            Portal {}
         }
     }
 }

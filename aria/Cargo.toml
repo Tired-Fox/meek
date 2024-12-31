@@ -1,0 +1,10 @@
+[package]
+name = "meek-aria"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dioxus.workspace = true
+strum = { version = "0.26.3", features = ["derive"] }
+short-uuid = "0.1.4"
+uuid = { version = "1.11.0", features = ["v4"] }

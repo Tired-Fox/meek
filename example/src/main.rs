@@ -3,7 +3,8 @@ use dioxus::prelude::*;
 use dioxus_logger::tracing::Level;
 use views::Showcase;
 
-mod components;
+use meek_aria::Portal;
+
 mod views;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
