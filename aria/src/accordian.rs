@@ -2,7 +2,7 @@ use std::{collections::{BTreeMap, HashSet}, rc::Rc};
 
 use dioxus::prelude::*;
 
-use crate::create_id;
+use crate::{create_id, Optional};
 
 use super::Orientation;
 
@@ -166,20 +166,22 @@ impl AccordianState {
 #[component]
 pub fn Accordian(
     /// Default item(s) to open
-    #[props(into)]
-    default: Option<Vec<String>>,
+    #[props(into, default)]
+    default: Optional<Vec<&'static str>>,
     /// Whether a "single" type accordian allows the user to close an open item
     collapsible: Option<bool>,
     /// Whether an accordian supports
     #[props(into, default = AccordianType::Single)]
     r#type: AccordianType,
+    /// Direction of the accordian
     orientation: Option<Orientation>,
 
+    /// Handler that is run when the open accordian items changes
     onchange: Option<EventHandler<HashSet<String>>>,
 
     children: Element
 ) -> Element {
-    use_context_provider(|| Signal::new(AccordianState::new(collapsible, r#type, orientation, default, onchange)));
+    use_context_provider(|| Signal::new(AccordianState::new(collapsible, r#type, orientation, default.as_option(), onchange)));
 
     rsx! {
         div {
@@ -242,15 +244,24 @@ impl AccordianItemState {
 /// - `[data-disabled]`: Present when disabled
 #[component]
 pub fn AccordianItem(
+    /// The unique value representing the item
+    /// 
+    /// This is what is returned when the `onchange` event is run
     #[props(into)]
     value: String,
+    /// Whether the item is disabled
+    /// 
+    /// This means that it cannot be toggled open or closed
     disabled: Option<bool>,
+
     #[props(into)]
     id: Option<String>,
-    children: Element,
 
+    /// Remaining attributes that are to be added to the item `div` container
     #[props(extends = GlobalAttributes)]
-    attrs: Vec<Attribute>
+    attrs: Vec<Attribute>,
+
+    children: Element,
 ) -> Element {
     let state = use_context::<Signal<AccordianState>>();
 
@@ -279,9 +290,10 @@ pub fn AccordianItem(
 /// - `[data-disabled]`: Present when disabled
 #[component]
 pub fn AccordianHeader(
-    children: Element,
+    /// Remaining attributes to add to the header `h3` tag
     #[props(extends = GlobalAttributes)]
-    attrs: Vec<Attribute>
+    attrs: Vec<Attribute>,
+    children: Element,
 ) -> Element {
     let state = use_context::<Signal<AccordianState>>();
 
@@ -319,9 +331,11 @@ pub fn AccordianHeader(
 pub fn AccordianTrigger(
     #[props(into)]
     id: Option<String>,
-    children: Element,
+    /// Remaining attributes to add to the trigger; `button` tag
     #[props(extends = GlobalAttributes)]
-    attrs: Vec<Attribute>
+    attrs: Vec<Attribute>,
+
+    children: Element,
 ) -> Element {
     let mut state = use_context::<Signal<AccordianState>>();
     let mut iid = use_context::<Signal<AccordianItemState>>();
@@ -367,10 +381,11 @@ pub fn AccordianTrigger(
 pub fn AccordianContent(
     #[props(into)]
     id: Option<String>,
-    children: Element,
-
+    /// Remaining attributes to add to wrapping `div` tag
     #[props(extends = GlobalAttributes)]
-    attrs: Vec<Attribute>
+    attrs: Vec<Attribute>,
+
+    children: Element,
 ) -> Element {
     let state = use_context::<Signal<AccordianState>>();
     let mut iid = use_context::<Signal<AccordianItemState>>();

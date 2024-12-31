@@ -3,7 +3,6 @@ use dioxus::prelude::*;
 use lucide_dioxus::{Bold, Check};
 
 use meek_aria::Button;
-use meek_aria::Toggle;
 use meek_aria::Checkbox;
 use meek_aria::{ Portal, Teleport };
 use meek_aria::{ Accordian, AccordianItem, AccordianHeader, AccordianContent, AccordianTrigger };
@@ -11,7 +10,7 @@ use meek_aria::{ AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialo
 
 #[component]
 pub fn Showcase() -> Element {
-    let mut pressed = use_signal(|| false);
+    let mut toggled = use_signal(|| false);
     let mut alert_open = use_signal(|| false);
 
     let accordian_items = [
@@ -34,10 +33,10 @@ pub fn Showcase() -> Element {
             div {
                 class: "p-4",
                 h2 { class: "text-xl font-bold mb-2", "Accordian" }
-                Toggle {
+                Button {
                     class: "",
-                    pressed: pressed(),
-                    onchange: move |state| pressed.set(state), 
+                    toggled: toggled(),
+                    onclick: move |_| toggled.toggle(), 
                     aria_label: "Toggle bold",
                     Bold { class: "w-4 h-4" }
                 }
@@ -47,6 +46,7 @@ pub fn Showcase() -> Element {
                 h2 { class: "text-xl font-bold mb-2", "Accordian" }
                 Accordian {
                     collapsible: true,
+                    default: ["item-1"],
                     onchange: move |items| {
                         println!("{items:?}");
                     },

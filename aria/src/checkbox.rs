@@ -1,10 +1,14 @@
 use dioxus::prelude::*;
 
+use crate::Optional;
+
 // TODO: Checkbox groups
 
-#[derive(Clone, Copy, PartialEq, strum::EnumIs)]
+/// Checkbox state types
+#[derive(Default, Clone, Copy, PartialEq, strum::EnumIs)]
 pub enum CheckboxState {
     On,
+    #[default]
     Off,
     Intermediate,
 }
@@ -46,10 +50,11 @@ impl<A: AsRef<str>> From<A> for CheckboxState {
 
 #[component]
 pub fn Checkbox(
-    #[props(into)]
-    checked: Option<CheckboxState>,
-    #[props(into)]
-    default: Option<CheckboxState>,
+    #[props(into, default = Optional::default())]
+    checked: Optional<CheckboxState>,
+
+    #[props(into, default = Optional::default())]
+    default: Optional<CheckboxState>,
 
     onchange: Option<EventHandler<CheckboxState>>,
 
@@ -67,9 +72,9 @@ pub fn Checkbox(
 
     children: Element,
 ) -> Element {
-    let mut state = use_signal(|| default.unwrap_or(CheckboxState::Off));
+    let mut state = use_signal(|| default.unwrap_or_default());
     use_effect(use_reactive!(|checked| {
-        if let Some(checked) = checked {
+        if let Optional::Some(checked) = checked {
             state.set(checked);
         }
     }));

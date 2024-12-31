@@ -99,6 +99,17 @@ pub fn AlertDialog(
 }
 
 /// A button that opens the dialog
+/// 
+/// # Data Attributes
+/// 
+/// - `[data-state]`: `"open"` | `"closed"`
+/// 
+/// # Accessibility
+/// 
+/// **Keyboard Interaction**
+/// 
+/// - `<Space>`: Open/Close the dialog.
+/// - `<Enter>`: Open/Close the dialog.
 #[component]
 pub fn AlertDialogTrigger(
     disabled: Option<bool>,
@@ -127,6 +138,10 @@ pub fn AlertDialogTrigger(
 }
 
 /// A `dialog` html element which contains the content to be rendered when it is open
+/// 
+/// # Data Attributes
+/// 
+/// - `[data-state]`: `"open"` | `"closed"`
 #[component]
 pub fn AlertDialogContent(
     #[props(into)]
@@ -221,6 +236,13 @@ pub fn AlertDialogDescription(
 /// A button that closes the dialog
 /// 
 /// This button should be distinguished from `AlertDialogAction` visually
+/// 
+/// # Accessibility
+/// 
+/// **Keyboard Interaction**
+/// 
+/// - `<Space>`: Close the dialog.
+/// - `<Enter>`: Close the dialog.
 #[component]
 pub fn AlertDialogCancel(
     #[props(extends = GlobalAttributes)]
@@ -248,6 +270,13 @@ pub fn AlertDialogCancel(
 /// A button that closes the dialog.
 /// 
 /// This button should be distinguished from `AlertDialogCancel` visually
+/// 
+/// # Accessibility
+/// 
+/// **Keyboard Interaction**
+/// 
+/// - `<Space>`: Close the dialog and call `onclick`.
+/// - `<Enter>`: Close the dialog and call `onclick`.
 #[component]
 pub fn AlertDialogAction(
     #[props(extends = GlobalAttributes)]
@@ -275,16 +304,5 @@ pub fn AlertDialogAction(
 
             {children}
         }
-    }
-}
-
-#[component]
-fn Provider<T: Clone + PartialEq + 'static>(
-    inherit: T,
-    children: Element
-) -> Element {
-    use_context_provider(|| inherit);
-    rsx! {
-        {children}
     }
 }

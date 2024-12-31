@@ -1,13 +1,13 @@
-mod toggle;
 mod accordian;
 mod alert_dialog;
 mod portal;
 mod button;
 mod checkbox;
+mod optional;
 
 use std::sync::atomic::AtomicUsize;
 
-pub use toggle::*;
+pub use optional::Optional;
 pub use accordian::*;
 pub use alert_dialog::*;
 pub use portal::*;
